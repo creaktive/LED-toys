@@ -3,7 +3,7 @@ from argparse import ArgumentParser
 from math import pi, sin
 from noise import snoise2
 from rpi_ws281x import PixelStrip, Color
-from time import sleep
+from time import time_ns, sleep
 
 def rainbow(p):
     q = 2 * pi * p
@@ -18,8 +18,8 @@ if __name__ == '__main__':
     parser.add_argument('--brightness', default=255, type=int, help='set to 0 for darkest and 255 for brightest (default: 255)')
     parser.add_argument('--fps', default=30, type=int, help='aim for specified frames per second (default: 30)')
     parser.add_argument('--gpio', default=12, type=int, help='GPIO pin connected to the LED strip (default: 12)')
-    parser.add_argument('--leds', default=128, type=int, help='how many LEDs to light up (default: 128)')
-    parser.add_argument('--octaves', default=2, type=int, help='noise octaves (default: 2)')
+    parser.add_argument('--leds', default=288, type=int, help='how many LEDs to light up (default: 288)')
+    parser.add_argument('--octaves', default=5, type=int, help='noise octaves (default: 5)')
     args = parser.parse_args()
 
     strip = PixelStrip(
@@ -30,17 +30,23 @@ if __name__ == '__main__':
 
     try:
         freq = 16.0 * args.octaves
+        interval = 1.0 / args.fps
         y = 0
 
         strip.begin()
+        timestamp = time_ns()
         while True:
             for x in range(args.leds):
                 color = rainbow(snoise2(x / freq, y / freq, args.octaves))
                 strip.setPixelColor(x, color)
+            y += 1
             strip.show()
 
-            sleep(1 / args.fps)
-            y += 1
+            now = time_ns()
+            sleep_for = interval - ((now - timestamp) / 1_000_000_000)
+            timestamp = now
+            if sleep_for > 0:
+                sleep(sleep_for)
     except KeyboardInterrupt:
         print('')
     finally:
