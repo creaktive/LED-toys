@@ -1,9 +1,19 @@
 #!/usr/bin/env python3
+import signal
 from argparse import ArgumentParser
 from math import pi, sin
 from noise import snoise2
 from rpi_ws281x import PixelStrip, Color
-from time import time_ns, sleep
+from time import monotonic_ns, sleep
+
+class GracefulKiller:
+    kill_now = False
+    def __init__(self):
+        signal.signal(signal.SIGINT, self.exit_gracefully)
+        signal.signal(signal.SIGTERM, self.exit_gracefully)
+
+    def exit_gracefully(self, *args):
+        self.kill_now = True
 
 def rainbow(p):
     q = 2 * pi * p
@@ -28,29 +38,27 @@ if __name__ == '__main__':
         brightness=args.brightness,
     )
 
-    try:
-        freq = 16.0 * args.octaves
-        interval = 1.0 / args.fps
-        y = 0
+    freq = 16.0 * args.octaves
+    interval = 1.0 / args.fps
+    y = 0
 
-        strip.begin()
-        timestamp = time_ns()
-        while True:
-            for x in range(args.leds):
-                color = rainbow(snoise2(x / freq, y / freq, args.octaves))
-                strip.setPixelColor(x, color)
-            y += 1
-            strip.show()
-
-            now = time_ns()
-            sleep_for = interval - ((now - timestamp) / 1_000_000_000)
-            timestamp = now
-            if sleep_for > 0:
-                sleep(sleep_for)
-    except KeyboardInterrupt:
-        print('')
-    finally:
-        black = Color(0, 0, 0)
+    killer = GracefulKiller()
+    strip.begin()
+    timestamp = monotonic_ns()
+    while not killer.kill_now:
         for x in range(args.leds):
-            strip.setPixelColor(x, black)
+            color = rainbow(snoise2(x / freq, y / freq, args.octaves))
+            strip.setPixelColor(x, color)
+        y += 1
         strip.show()
+
+        now = monotonic_ns()
+        sleep_for = interval - ((now - timestamp) / 1_000_000_000)
+        timestamp = now
+        if sleep_for > 0:
+            sleep(sleep_for)
+
+    black = Color(0, 0, 0)
+    for x in range(args.leds):
+        strip.setPixelColor(x, black)
+    strip.show()
