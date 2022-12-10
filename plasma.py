@@ -14,18 +14,11 @@ def rainbow(p):
 if __name__ == '__main__':
     fps = 30
     gpio = 12
-    brightness = 32
+    brightness = 16
     width = 128
 
-    height = 1024
     octaves = 4
     freq = 16.0 * octaves
-
-    frames = []
-    for y in range(height):
-        line = [rainbow(snoise2(x / freq, y / freq, octaves)) for x in range(width)]
-        frames.append(line)
-    frames += list(reversed(frames))
 
     strip = PixelStrip(
         width,
@@ -34,13 +27,20 @@ if __name__ == '__main__':
     )
     strip.begin()
 
-    i = 0
-    while True:
-        frame = frames[i % len(frames)]
-        i += 1
+    try:
+        y = 0
+        while True:
+            for x in range(width):
+                color = rainbow(snoise2(x / freq, y / freq, octaves))
+                strip.setPixelColor(x, color)
+            strip.show()
 
+            sleep(1 / fps)
+            y += 1
+    except KeyboardInterrupt:
+        print('')
+    finally:
+        black = Color(0, 0, 0)
         for x in range(width):
-            strip.setPixelColor(x, frame[x])
+            strip.setPixelColor(x, black)
         strip.show()
-
-        sleep(1 / fps)
