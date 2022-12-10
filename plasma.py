@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import sys
 from argparse import ArgumentParser
 from math import pi, sin
 from noise import snoise2
@@ -22,7 +21,6 @@ if __name__ == '__main__':
     parser.add_argument('--leds', default=128, type=int, help='how many LEDs to light up (default: 128)')
     parser.add_argument('--octaves', default=2, type=int, help='noise octaves (default: 2)')
     args = parser.parse_args()
-    sys.argv = []
 
     strip = PixelStrip(
         args.leds,
