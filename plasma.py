@@ -57,8 +57,12 @@ def convert_wave_length_nm_to_rgb(wave_length_nm, gamma=0.8):
 def clamp(x, minimum=0.0, maximum=1.0):
     return max(minimum, min(x, maximum))
 
+NANOSECONDS_IN_SECOND = 1_000_000_000
+def sleep_ns(ns):
+    return sleep(ns / NANOSECONDS_IN_SECOND)
+
 if __name__ == '__main__':
-    parser = ArgumentParser(description='Pipe pixel colors to a LED strip')
+    parser = ArgumentParser(description='Play plasma effect on a WS2812B RGB LED strip')
     parser.add_argument('--brightness', default=255, type=int, help='set to 0 for darkest and 255 for brightest (default: 255)')
     parser.add_argument('--fps', default=30, type=int, help='aim for specified frames per second (default: 30)')
     parser.add_argument('--gpio', default=12, type=int, help='GPIO pin connected to the LED strip (default: 12)')
@@ -76,13 +80,14 @@ if __name__ == '__main__':
     )
 
     freq = 16.0 * args.octaves
-    interval = 1.0 / args.fps
+    interval = int(NANOSECONDS_IN_SECOND / args.fps)
     y = 0
 
     killer = GracefulKiller()
     strip.begin()
-    timestamp = monotonic_ns()
     while not killer.kill_now:
+        next_frame = monotonic_ns() + interval
+
         sway = args.sway_amount * sin(2.0 * pi * y / (args.fps * args.sway_period))
         for x in range(args.leds):
             noise = clamp(0.5 + snoise2((x + sway) / freq, y / freq, args.octaves))
@@ -92,10 +97,8 @@ if __name__ == '__main__':
         strip.show()
 
         now = monotonic_ns()
-        sleep_for = interval - ((now - timestamp) / 1_000_000_000)
-        timestamp = now
-        if sleep_for > 0:
-            sleep(sleep_for)
+        if next_frame > now:
+            sleep_ns(next_frame - now)
 
     black = Color(0, 0, 0)
     for x in range(args.leds):
