@@ -66,6 +66,7 @@ if __name__ == '__main__':
     parser.add_argument('--octaves', default=5, type=int, help='noise octaves (default: 5)')
     parser.add_argument('--sway_amount', default=100.0, type=float, help='sway amount (default: 100.0)')
     parser.add_argument('--sway_period', default=30.0, type=float, help='sway period, in seconds (default: 30.0)')
+    parser.add_argument('--gamma', default=0.8, type=float, help='gamma (default: 0.8)')
     args = parser.parse_args()
 
     strip = PixelStrip(
@@ -85,7 +86,7 @@ if __name__ == '__main__':
         sway = args.sway_amount * sin(2.0 * pi * y / (args.fps * args.sway_period))
         for x in range(args.leds):
             noise = clamp(0.5 + snoise2((x + sway) / freq, y / freq, args.octaves))
-            color = convert_wave_length_nm_to_rgb(380.0 + 400.0 * noise, 1.0)
+            color = convert_wave_length_nm_to_rgb(380.0 + 400.0 * noise, args.gamma)
             strip.setPixelColor(x, color)
         y += 1
         strip.show()
