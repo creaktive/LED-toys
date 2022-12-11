@@ -15,13 +15,47 @@ class GracefulKiller:
     def exit_gracefully(self, *args):
         self.kill_now = True
 
-def rainbow(p):
-    q = 2 * pi * p
+# https://github.com/ArashPartow/bitmap/blob/master/bitmap_image.hpp#L2859
+def convert_wave_length_nm_to_rgb(wave_length_nm, gamma=0.8):
+    # Credits: Dan Bruton http://www.physics.sfasu.edu/astro/color.html
+    red = 0.0
+    green = 0.0
+    blue = 0.0
+    if wave_length_nm >= 380.0 and wave_length_nm < 440.0:
+        red = -(wave_length_nm - 440.0) / (440.0 - 380.0)
+        blue = 1.0
+    elif wave_length_nm >= 440.0 and wave_length_nm < 490.0:
+        green = (wave_length_nm - 440.0) / (490.0 - 440.0)
+        blue = 1.0
+    elif wave_length_nm >= 490.0 and wave_length_nm < 510.0:
+        green = 1.0
+        blue = -(wave_length_nm - 510.0) / (510.0 - 490.0)
+    elif wave_length_nm >= 510.0 and wave_length_nm < 580.0:
+        red = (wave_length_nm - 510.0) / (580.0 - 510.0)
+        green = 1.0
+    elif wave_length_nm >= 580.0 and wave_length_nm < 645.0:
+        red = 1.0
+        green = -(wave_length_nm - 645.0) / (645.0 - 580.0)
+    elif wave_length_nm >= 645.0 and wave_length_nm <= 780.0:
+        red = 1.0
+
+    factor = 0.0
+    if wave_length_nm >= 380.0 and wave_length_nm < 420.0:
+        factor = 0.3 + 0.7 * (wave_length_nm - 380.0) / (420.0 - 380.0)
+    elif wave_length_nm >= 420.0 and wave_length_nm < 701.0:
+        factor = 1.0
+    elif wave_length_nm >= 701.0 and wave_length_nm <= 780.0:
+        factor = 0.3 + 0.7 * (780.0 - wave_length_nm) / (780.0 - 700.0)
+
+    intensity_max = 255.0
     return Color(
-        int(128.0 + 127.0 * sin(pi + q)),
-        int(128.0 + 127.0 * sin(pi + q + 2 * pi / 3)),
-        int(128.0 + 127.0 * sin(pi + q + 4 * pi / 3))
+        0 if red == 0.0 else int(round(intensity_max * pow(red * factor, gamma))),
+        0 if green == 0.0 else int(round(intensity_max * pow(green * factor, gamma))),
+        0 if blue == 0.0 else int(round(intensity_max * pow(blue * factor, gamma)))
     )
+
+def clamp(x, minimum=0.0, maximum=1.0):
+    return max(minimum, min(x, maximum))
 
 if __name__ == '__main__':
     parser = ArgumentParser(description='Pipe pixel colors to a LED strip')
@@ -47,7 +81,8 @@ if __name__ == '__main__':
     timestamp = monotonic_ns()
     while not killer.kill_now:
         for x in range(args.leds):
-            color = rainbow(snoise2(x / freq, y / freq, args.octaves))
+            noise = clamp(0.5 + snoise2(x / freq, y / freq, args.octaves))
+            color = convert_wave_length_nm_to_rgb(380.0 + 400.0 * noise, 1.0)
             strip.setPixelColor(x, color)
         y += 1
         strip.show()
