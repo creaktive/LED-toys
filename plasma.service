@@ -2,11 +2,11 @@
 # sudo systemctl enable plasma.service
 # sudo systemctl start plasma.service
 [Unit]
-Description=plasma effect on LED strip
-After=multi-user.target
+Description=Play plasma effect on a WS2812B RGB LED strip
+After=network-online.target
 
 [Service]
-Type=idle
+Nice=-20
 ExecStart=/home/pi/LED-toys/plasma.py
 
 [Install]
