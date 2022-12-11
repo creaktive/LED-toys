@@ -64,6 +64,8 @@ if __name__ == '__main__':
     parser.add_argument('--gpio', default=12, type=int, help='GPIO pin connected to the LED strip (default: 12)')
     parser.add_argument('--leds', default=288, type=int, help='how many LEDs to light up (default: 288)')
     parser.add_argument('--octaves', default=5, type=int, help='noise octaves (default: 5)')
+    parser.add_argument('--sway_amount', default=100.0, type=float, help='sway amount (default: 100.0)')
+    parser.add_argument('--sway_period', default=30.0, type=float, help='sway period, in seconds (default: 30.0)')
     args = parser.parse_args()
 
     strip = PixelStrip(
@@ -80,8 +82,9 @@ if __name__ == '__main__':
     strip.begin()
     timestamp = monotonic_ns()
     while not killer.kill_now:
+        sway = args.sway_amount * sin(2.0 * pi * y / (args.fps * args.sway_period))
         for x in range(args.leds):
-            noise = clamp(0.5 + snoise2(x / freq, y / freq, args.octaves))
+            noise = clamp(0.5 + snoise2((x + sway) / freq, y / freq, args.octaves))
             color = convert_wave_length_nm_to_rgb(380.0 + 400.0 * noise, 1.0)
             strip.setPixelColor(x, color)
         y += 1
