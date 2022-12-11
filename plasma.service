@@ -1,0 +1,13 @@
+# sudo cp plasma.service /lib/systemd/system/
+# sudo systemctl enable plasma.service
+# sudo systemctl start plasma.service
+[Unit]
+Description=plasma effect on LED strip
+After=multi-user.target
+
+[Service]
+Type=idle
+ExecStart=/home/pi/LED-toys/plasma.py
+
+[Install]
+WantedBy=multi-user.target
