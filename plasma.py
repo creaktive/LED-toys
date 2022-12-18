@@ -64,7 +64,7 @@ def sleep_ns(ns):
 if __name__ == '__main__':
     parser = ArgumentParser(description='Play plasma effect on a WS2812B RGB LED strip')
     parser.add_argument('--brightness', default=255, type=int, help='set to 0 for darkest and 255 for brightest (default: 255)')
-    parser.add_argument('--fps', default=48, type=int, help='aim for specified frames per second (default: 48)')
+    parser.add_argument('--fps', default=40, type=int, help='aim for specified frames per second (default: 48)')
     parser.add_argument('--gpio', default=12, type=int, help='GPIO pin connected to the LED strip (default: 12)')
     parser.add_argument('--leds', default=288, type=int, help='how many LEDs to light up (default: 288)')
     parser.add_argument('--octaves', default=5, type=int, help='noise octaves (default: 5)')
