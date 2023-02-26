@@ -4,14 +4,25 @@ import re
 import subprocess
 from argparse import ArgumentParser
 
+# install cycler.service & add to crontab:
+# 0 6 * * * /home/pi/LED-toys/cycler.py
+# 0 22 * * * /home/pi/LED-toys/cycler.py --stop
+
 COMMAND = ['sudo', 'systemctl']
 FX = ['', 'plasma', 'pianolizer']
 
-def cycle():
+def list_services():
     services_command = subprocess.run([*COMMAND, '--type=service', '--state=running'], capture_output=True)
     services_output = services_command.stdout.decode('utf-8')
     all_services = re.findall(r'(\S+)\.service', services_output, re.MULTILINE)
-    known_services = [s for s in all_services if s in FX]
+    return [s for s in all_services if s in FX]
+
+def stop_services(services):
+    for service in services:
+        subprocess.run([*COMMAND, 'stop', service])
+
+def cycle():
+    known_services = list_services()
 
     n = len(known_services)
     if n == 0:
@@ -24,17 +35,20 @@ def cycle():
         if idx_next > 0:
             subprocess.run([*COMMAND, 'start', FX[idx_next]])
     else:
-        for service in known_services:
-            subprocess.run([*COMMAND, 'stop', service])
+        stop_services(known_services)
 
 if __name__ == '__main__':
     parser = ArgumentParser(description='Cycle LED effects')
     parser.add_argument('--gpio', default=0, type=int, help='GPIO pin connected to the button (default: just cycle)')
-    parser.add_argument('--timeout', default=5000, type=int, help='button timeout (default: 5000 ms)')
+    parser.add_argument('--timeout', default=60000, type=int, help='button timeout (default: 60000 ms)')
+    parser.add_argument('--stop', action='store_true', help='stop all known effects')
     args = parser.parse_args()
 
     if args.gpio == 0:
-        cycle()
+        if (args.stop):
+            stop_services(list_services())
+        else:
+            cycle()
     else:
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(args.gpio, GPIO.IN)
