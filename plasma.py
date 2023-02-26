@@ -82,7 +82,7 @@ if __name__ == '__main__':
 
     freq = 16.0 * args.octaves
     interval = int(NANOSECONDS_IN_SECOND / args.fps)
-    y = 0.0
+    y = monotonic_ns() / 1_000_000_000
 
     killer = GracefulKiller()
     strip.begin()
