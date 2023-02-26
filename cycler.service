@@ -1,0 +1,13 @@
+# sudo ln -rs cycler.service /lib/systemd/system/
+# sudo systemctl enable cycler.service
+# sudo systemctl start cycler.service
+[Unit]
+Description=Cycle LED effects
+After=multi-user.target
+
+[Service]
+Nice=19
+ExecStart=/home/pi/LED-toys/cycler.py --gpio=17
+
+[Install]
+WantedBy=multi-user.target
