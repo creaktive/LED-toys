@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 from math import pi, sin
 from noise import snoise2
 from rpi_ws281x import PixelStrip, Color
-from time import time, time_ns, sleep
+from time import time, monotonic_ns, sleep
 
 class GracefulKiller:
     kill_now = False
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     killer = GracefulKiller()
     strip.begin()
     while not killer.kill_now:
-        next_frame = time_ns() + interval
+        next_frame = monotonic_ns() + interval
         y = time()
 
         sway = args.sway_amount * sin(2.0 * pi * y / (args.fps * args.sway_period))
@@ -95,7 +95,7 @@ if __name__ == '__main__':
             strip.setPixelColor(x, color)
         strip.show()
 
-        now = time_ns()
+        now = monotonic_ns()
         if next_frame > now:
             sleep_ns(next_frame - now)
 
