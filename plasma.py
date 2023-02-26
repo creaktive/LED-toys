@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 from math import pi, sin
 from noise import snoise2
 from rpi_ws281x import PixelStrip, Color
-from time import monotonic_ns, sleep
+from time import monotonic, monotonic_ns, sleep
 
 class GracefulKiller:
     kill_now = False
@@ -71,7 +71,6 @@ if __name__ == '__main__':
     parser.add_argument('--sway_amount', default=100.0, type=float, help='sway amount (default: 100.0)')
     parser.add_argument('--sway_period', default=30.0, type=float, help='sway period, in seconds (default: 30.0)')
     parser.add_argument('--gamma', default=0.8, type=float, help='gamma (default: 0.8)')
-    parser.add_argument('--scroll_step', default=0.1, type=float, help='scroll step (default: 0.1)')
     args = parser.parse_args()
 
     strip = PixelStrip(
@@ -82,19 +81,18 @@ if __name__ == '__main__':
 
     freq = 16.0 * args.octaves
     interval = int(NANOSECONDS_IN_SECOND / args.fps)
-    y = monotonic_ns() / 1_000_000_000
 
     killer = GracefulKiller()
     strip.begin()
     while not killer.kill_now:
         next_frame = monotonic_ns() + interval
+        y = monotonic()
 
         sway = args.sway_amount * sin(2.0 * pi * y / (args.fps * args.sway_period))
         for x in range(args.leds):
             noise = clamp(0.5 + snoise2((x + sway) / freq, y / freq, args.octaves))
             color = convert_wave_length_nm_to_rgb(380.0 + 400.0 * noise, args.gamma)
             strip.setPixelColor(x, color)
-        y += args.scroll_step
         strip.show()
 
         now = monotonic_ns()
