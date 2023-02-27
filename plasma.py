@@ -6,6 +6,9 @@ from noise import snoise2
 from rpi_ws281x import PixelStrip, Color
 from time import time, monotonic_ns, sleep
 
+START = 1672531200
+NANOSECONDS_IN_SECOND = 1_000_000_000
+
 class GracefulKiller:
     kill_now = False
     def __init__(self):
@@ -57,7 +60,6 @@ def convert_wave_length_nm_to_rgb(wave_length_nm, gamma=0.8):
 def clamp(x, minimum=0.0, maximum=1.0):
     return max(minimum, min(x, maximum))
 
-NANOSECONDS_IN_SECOND = 1_000_000_000
 def sleep_ns(ns):
     return sleep(ns / NANOSECONDS_IN_SECOND)
 
@@ -86,7 +88,7 @@ if __name__ == '__main__':
     strip.begin()
     while not killer.kill_now:
         next_frame = monotonic_ns() + interval
-        y = time()
+        y = time() - START
 
         sway = args.sway_amount * sin(2.0 * pi * y / (args.fps * args.sway_period))
         for x in range(args.leds):
