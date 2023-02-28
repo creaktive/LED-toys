@@ -3,6 +3,7 @@ import RPi.GPIO as GPIO
 import re
 import subprocess
 from argparse import ArgumentParser
+from time import monotonic
 
 # install cycler.service & add to crontab:
 # 0 6 * * * /home/pi/LED-toys/cycler.py
@@ -42,6 +43,7 @@ if __name__ == '__main__':
     parser.add_argument('--gpio', default=0, type=int, help='GPIO pin connected to the button (default: just cycle)')
     parser.add_argument('--timeout', default=60000, type=int, help='button timeout (default: 60000 ms)')
     parser.add_argument('--stop', action='store_true', help='stop all known effects')
+    parser.add_argument('--sensitivity', default=0.1, type=float, help='min period between repeated button actions (default: 0.1 s)')
     args = parser.parse_args()
 
     if args.gpio == 0:
@@ -53,7 +55,11 @@ if __name__ == '__main__':
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(args.gpio, GPIO.IN)
 
+        last_action = 0
         while True:
             channel = GPIO.wait_for_edge(args.gpio, GPIO.FALLING, timeout=args.timeout)
             if not channel is None:
-                cycle()
+                now = monotonic()
+                if now - last_action >= args.sensitivity:
+                    cycle()
+                    last_action = now
