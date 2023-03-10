@@ -70,6 +70,7 @@ if __name__ == '__main__':
     parser.add_argument('--gpio', default=12, type=int, help='GPIO pin connected to the LED strip (default: 12)')
     parser.add_argument('--leds', default=288, type=int, help='how many LEDs to light up (default: 288)')
     parser.add_argument('--octaves', default=5, type=int, help='noise octaves (default: 5)')
+    parser.add_argument('--speed', default=5.0, type=float, help='scroll speed (default: 5.0)')
     parser.add_argument('--sway_amount', default=100.0, type=float, help='sway amount (default: 100.0)')
     parser.add_argument('--sway_period', default=30.0, type=float, help='sway period, in seconds (default: 30.0)')
     parser.add_argument('--gamma', default=0.8, type=float, help='gamma (default: 0.8)')
@@ -88,7 +89,7 @@ if __name__ == '__main__':
     strip.begin()
     while not killer.kill_now:
         next_frame = monotonic_ns() + interval
-        y = time() - START
+        y = (time() - START) / args.speed
 
         sway = args.sway_amount * sin(2.0 * pi * y / (args.fps * args.sway_period))
         for x in range(args.leds):
