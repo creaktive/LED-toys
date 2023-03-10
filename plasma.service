@@ -7,7 +7,7 @@ After=multi-user.target
 
 [Service]
 Nice=-19
-ExecStart=/home/pi/LED-toys/plasma.py --brightness=32 --leds=127
+ExecStart=/home/pi/LED-toys/plasma.py --brightness=42 --leds=127
 
 [Install]
 WantedBy=multi-user.target
