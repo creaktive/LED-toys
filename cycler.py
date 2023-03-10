@@ -44,6 +44,8 @@ if __name__ == '__main__':
     parser.add_argument('--timeout', default=60000, type=int, help='button timeout (default: 60000 ms)')
     parser.add_argument('--stop', action='store_true', help='stop all known effects')
     parser.add_argument('--sensitivity', default=0.1, type=float, help='min period between repeated button actions (default: 0.1 s)')
+    parser.add_argument('--poweroff_repeat', default=3, type=int, help='press N times in row to power off (default: 3 s)')
+    parser.add_argument('--poweroff_sensitivity', default=0.75, type=float, help='what counts as repeated press (default: 0.75 s)')
     args = parser.parse_args()
 
     if args.gpio == 0:
@@ -56,10 +58,18 @@ if __name__ == '__main__':
         GPIO.setup(args.gpio, GPIO.IN)
 
         last_action = 0
+        sequence = 0
         while True:
             channel = GPIO.wait_for_edge(args.gpio, GPIO.FALLING, timeout=args.timeout)
             if not channel is None:
                 now = monotonic()
-                if now - last_action >= args.sensitivity:
-                    cycle()
+                delta = now - last_action
+                if delta >= args.sensitivity:
                     last_action = now
+                    if delta >= args.poweroff_sensitivity:
+                        sequence = 0
+                        cycle()
+                    else:
+                        sequence += 1
+                        if sequence >= args.poweroff_repeat:
+                            subprocess.run(['sudo', 'poweroff'])
