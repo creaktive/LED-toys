@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import signal
 from argparse import ArgumentParser
 from math import pi, sin
@@ -7,6 +8,7 @@ from rpi_ws281x import PixelStrip, Color
 from time import monotonic_ns, sleep
 
 NANOSECONDS_IN_SECOND = 1_000_000_000
+PLASMA_WARMUP = 'PLASMA_WARMUP'
 
 class GracefulKiller:
     kill_now = False
@@ -18,7 +20,7 @@ class GracefulKiller:
         self.kill_now = True
 
 # https://github.com/ArashPartow/bitmap/blob/master/bitmap_image.hpp#L2859
-def convert_wave_length_nm_to_rgb(wave_length_nm, gamma=0.8):
+def convert_wave_length_nm_to_rgb(wave_length_nm, gamma=0.8, intensity_max=255.0):
     # Credits: Dan Bruton http://www.physics.sfasu.edu/astro/color.html
     red = 0.0
     green = 0.0
@@ -49,7 +51,6 @@ def convert_wave_length_nm_to_rgb(wave_length_nm, gamma=0.8):
     elif wave_length_nm >= 701.0 and wave_length_nm <= 780.0:
         factor = 0.3 + 0.7 * (780.0 - wave_length_nm) / (780.0 - 700.0)
 
-    intensity_max = 255.0
     return Color(
         0 if red == 0.0 else int(round(intensity_max * pow(red * factor, gamma))),
         0 if green == 0.0 else int(round(intensity_max * pow(green * factor, gamma))),
@@ -78,22 +79,31 @@ if __name__ == '__main__':
     strip = PixelStrip(
         args.leds,
         args.gpio,
-        brightness=args.brightness,
     )
 
     freq = 16.0 * args.octaves
     interval = int(NANOSECONDS_IN_SECOND / args.fps)
     y = 0.0
 
+    if PLASMA_WARMUP in os.environ:
+        warm_up = int(NANOSECONDS_IN_SECOND * int(os.environ[PLASMA_WARMUP]))
+        warm_by = monotonic_ns() + warm_up
+    else:
+        warm_by = 0
+
     killer = GracefulKiller()
     strip.begin()
     while not killer.kill_now:
-        next_frame = monotonic_ns() + interval
+        now = monotonic_ns()
+        next_frame = now + interval
+
+        intensity = 1.0 if warm_by < now else (1.0 - (warm_by - now) / warm_up)
+        intensity = clamp(args.brightness * intensity, 1.0, args.brightness)
 
         sway = args.sway_amount * sin(2.0 * pi * y / (args.fps * args.sway_period))
         for x in range(args.leds):
             noise = clamp(0.5 + snoise2((x + sway) / freq, y / freq, args.octaves))
-            color = convert_wave_length_nm_to_rgb(380.0 + 400.0 * noise, args.gamma)
+            color = convert_wave_length_nm_to_rgb(380.0 + 400.0 * noise, args.gamma, intensity)
             strip.setPixelColor(x, color)
         y += args.scroll_step
         strip.show()
