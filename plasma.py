@@ -2,6 +2,7 @@
 import os
 import signal
 from argparse import ArgumentParser
+from dotenv import load_dotenv
 from math import pi, sin
 from noise import snoise2
 from rpi_ws281x import PixelStrip, Color
@@ -85,6 +86,7 @@ if __name__ == '__main__':
     interval = int(NANOSECONDS_IN_SECOND / args.fps)
     y = 0.0
 
+    load_dotenv()
     if PLASMA_WARMUP in os.environ:
         warm_up = int(NANOSECONDS_IN_SECOND * int(os.environ[PLASMA_WARMUP]))
         warm_by = monotonic_ns() + warm_up
